@@ -1,0 +1,141 @@
+auto_encrypted v0.01
+Copyright(C) 2018
+info@carbonprojectfinance.co.uk
+https://github.com/jobcpf/auto_encrypted
+    
+Development time supported by:
+
+------------------------------------------------------------------------------
+Description 
+------------------------------------------------------------------------------
+
+##### Script Args #####
+
+# no args - dismount all encrypted drives
+./auto_enc.py
+
+# single arg: mount - search ALL available external devices for auth credentials
+./auto_enc.py mount 
+
+# dual args: mount, device - search only volumes attached to passed external device for auth credentials
+./auto_enc.py mount device # e.g. ./auto_enc.py mount /dev/sdb
+
+# single arg: config - search CONF_DIR directory for CONF_EXT extensions and encrypt
+./auto_enc.py config 
+
+
+##### Script Requires #####
+[user] ALL=NOPASSWD: /bin/mount,/bin/umount
+[user] ALL=NOPASSWD: /usr/bin/veracrypt
+
+------------------------------------------------------------------------------
+Documentation 
+------------------------------------------------------------------------------
+
+------------------------------------------------------------------------------
+Basic Usage Instructions
+------------------------------------------------------------------------------
+
+##### Device Security #####
+
+cd ~/.ssh/
+ssh-keygen -t RSA -C "device authorisation keypair" -f device.auth.keypair
+
+Public Key
+    cat device.auth.keypair.pub > [device]/somewhere
+    update var config.PUB_KF = somewhere
+
+Private Key
+    device.auth.keypair, filename to PRV_KEYS = 'device.auth.keypair', update location in PRV_KEY_DIR
+
+
+##### Volume Configuration JSON #####
+
+1. Create valid JSON
+    {
+        "keyfiles": [
+            "keyfile",
+            ...
+        ],
+        "pw": true / false / 'string', # true - prompts for password, false - no password, string - password
+        "volume": "/dev/sda[0-9]", # mount volume
+        "mount_point": "[full path to mount point]", 
+        "interactive": true / false # interactive
+    }
+
+2. Save in CONF_DIR directory with CONF_EXT extension
+3. run ./auto_enc.py config to encrypt with private key
+4. copy to device to file and add filename to ENC_VOL_CFE list
+
+
+##### Device Discovery / udev #####
+
+Triggering using udev on device add. Requires symlink script in ~/bin:
+    ln -s ~/dev/auto_encrypted/auto_enc.sh ~/bin/auto_enc.sh
+
+Event Listener for USB Drive, Reference:
+    https://unix.stackexchange.com/questions/65891/how-to-execute-a-shellscript-when-i-plug-in-a-usb-device
+    https://help.ubuntu.com/community/UsbDriveDoSomethingHowto
+    https://wiki.archlinux.org/index.php/udev
+    https://www.novell.com/documentation/opensuse110/opensuse110_reference/data/sec_udev_rules.html
+
+1. Investigate device & identify Device Attributes:
+    dmesg
+...
+[41740.951000] usb 3-3: new high-speed USB device number 22 using xhci_hcd
+[41741.101551] usb 3-3: New USB device found, idVendor=1908, idProduct=1320
+[41741.101559] usb 3-3: New USB device strings: Mfr=1, Product=2, SerialNumber=3
+[41741.101564] usb 3-3: Product: Mass storage
+[41741.101569] usb 3-3: Manufacturer: Generic
+[41741.101573] usb 3-3: SerialNumber: 0008912447
+...
+
+    lsusb
+...
+Bus 003 Device 020: ID 1908:1320 GEMBIRD PhotoFrame PF-15-1
+...
+
+    udevadm info --attribute-walk --name /dev/sda1
+    udevadm info -n /dev/sd[X]
+...
+E: ID_SERIAL=Generic_Flash-Disk_0008912447-0:0
+E: ID_SERIAL_SHORT=0008912447
+...
+   
+2. Create trigger rule as root:
+    /etc/udev/rules.d/99-auto_enc.rules
+    
+    # USB
+
+# run directly - relies on auto_enc.sh to define user etc.
+ACTION=="add" \
+, KERNEL=="sd[a-z]" \
+, ENV{ID_SERIAL_SHORT}=="0008912447" \
+, RUN+="/home/[user]/bin/auto_enc.sh"
+
+# run as user and pass args to script (as only user env available)
+ACTION=="add" \
+, KERNEL=="sd[a-z]" \
+, ENV{ID_SERIAL_SHORT}=="0008912447" \
+, RUN+="/bin/su -c '/home/[user]/bin/auto_enc.sh %E{DEVNAME} %E{DEVPATH}' - [user]"
+
+
+------------------------------------------------------------------------------
+Plugins
+------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+Templates
+------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+Reference
+------------------------------------------------------------------------------
+
+
+------------------------------------------------------------------------------
+License
+------------------------------------------------------------------------------
+See LICENSE
