@@ -498,7 +498,7 @@ if __name__ == "__main__":
             usb_unmount()
         
             # dialogue
-            confirmed = confirm_mount('Not Mounted','Dismounted all volumes.')
+            confirmed = confirm_mount('No Mounted Volumes','No credentials available. \nAll encrypted volumes have been dismounted.')
         
         exit(0)
     
@@ -514,7 +514,7 @@ if __name__ == "__main__":
         usb_unmount()
         
         # dialogue
-        confirmed = confirm_mount('Dismounted','Dismounted all volumes.')
+        confirmed = confirm_mount('Dismounted','All encrypted volumes have been dismounted.')
 
         
         exit(0)
