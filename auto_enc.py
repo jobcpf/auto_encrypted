@@ -26,7 +26,8 @@ import Tkinter as tk
 # logging
 import logging
 logfile = "/tmp/auto_enc_test.log"
-logging.basicConfig(filename=logfile,level=logging.ERROR)
+logging.basicConfig(filename=logfile,level=logging.DEBUG)
+#logging.basicConfig(filename=logfile,level=logging.ERROR)
 
 ################## env #################################### env #################################### env ##################
 
@@ -76,7 +77,7 @@ def getpwd():
     logging.debug('%s:%s: Running password dialogue script.' % (time.strftime('%Y-%m-%d %H:%M:%S'), func_name))
     
     global password
-    password = ''
+    password = True
     
     # main screen
     root = tk.Tk()
@@ -93,17 +94,27 @@ def getpwd():
     
     def onpwdentry(evt):
         global password
-        password = pwdbox.get()
+        pw_retrieve = pwdbox.get()
+        if pw_retrieve:
+            password = pw_retrieve
         root.destroy()
         
     def onokclick():
         global password
-        password = pwdbox.get()
+        pw_retrieve = pwdbox.get()
+        if pw_retrieve:
+            password = pw_retrieve
+        root.destroy()
+        
+    def oncancelclick():
+        global password
+        password = False
         root.destroy()
     
     # actions
     pwdbox.bind('<Return>', onpwdentry)
-    tk.Button(root, command=onokclick, text = 'OK').pack(side = 'top', padx=60, pady=10)
+    tk.Button(root, command=onokclick, text = 'OK').pack(side = 'left', padx=20, pady=10)
+    tk.Button(root, command=oncancelclick, text = 'Cancel').pack(side = 'right', padx=20, pady=10)
     
     root.mainloop()
     return password
@@ -358,8 +369,9 @@ def mount_encrypted():
         logging.error('%s:%s: No configurations present.' % (time.strftime('%Y-%m-%d %H:%M:%S'), func_name))
         return False
     
-    # slot incrementing
+    # incrementing & control
     slot = 10
+    abort_mount = False
     
     ## iterate configured volumes
     for enc_vol in enc_cfg_list :
@@ -376,6 +388,11 @@ def mount_encrypted():
             if pw:
                 # get password from dialogue
                 password = getpwd()
+                
+                if not password:
+                    logging.debug('%s:%s: Dialogue yielded no password - abort.' % (time.strftime('%Y-%m-%d %H:%M:%S'), func_name))
+                    unmounted = usb_unmount()
+                    return True # prevent encrypt dismount
             else:
                 password = None
         else:
@@ -404,7 +421,7 @@ def mount_encrypted():
              ## unmount usb
             logging.debug('%s:%s: Calling unmount for device' % (time.strftime('%Y-%m-%d %H:%M:%S'), func_name))
             unmounted = usb_unmount()
-            return False
+            return True
         
         ## build veracrypt command
         

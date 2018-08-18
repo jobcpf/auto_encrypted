@@ -21,7 +21,7 @@ MNT_IDS = 'uid={uid},gid={gid}' # mount id string
 
 ## device security
 PUB_KF = 'logfile0_364' # file name containing device public key
-PRV_KEY_DIR = '{home}/.ssh' # private key dir
+PRV_KEY_DIR = '{home}/.ssh' # private key dir, relative to user home
 PRV_KF = 'auto_enc.ferret.linux' # private key
 
 ## secure config
